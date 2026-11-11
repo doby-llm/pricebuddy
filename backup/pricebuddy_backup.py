@@ -873,6 +873,8 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--verify-local", metavar="ARCHIVE", help="Verify an existing local .tar or .tar.zst backup.")
     mode.add_argument("--drive", action="store_true", help="Create, locally verify, then upload this capture to Google Drive.")
     mode.add_argument("--verify-drive", action="store_true", help="Verify the newest valid local capture against its exact Drive object.")
+    mode.add_argument("--dump-only", action="store_true", help="Write only the MySQL dump to --out (pibackup pre-hook; no archive, no Drive).")
+    parser.add_argument("--out", type=pathlib.Path, default=None, help="Output file for --dump-only.")
     parser.add_argument(
         "--drive-transport",
         type=pathlib.Path,
@@ -989,7 +991,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--drive-transport requires --drive or --verify-drive")
     if args.timeout < 1:
         parser.error("--timeout must be positive")
+    if args.dump_only and args.out is None:
+        parser.error("--dump-only requires --out")
+    if args.out is not None and not args.dump_only:
+        parser.error("--out requires --dump-only")
     try:
+        if args.dump_only:
+            dump_mysql(args.database_container, args.out, args.timeout)
+            return 0
         transport_path = args.drive_transport or DEFAULT_DRIVE_TRANSPORT
         transport_module = load_drive_transport(transport_path) if remote_requested else None
         if args.verify_drive:
