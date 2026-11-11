@@ -72,3 +72,6 @@ backups/
 *.backup-before-*
 __pycache__/
 backup/fixtures/compose-with-secrets.yml
+
+# Image tags generated at build time (IR08, PR-07)
+.image-tags.env
