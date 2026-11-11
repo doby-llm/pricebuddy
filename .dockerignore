@@ -1,6 +1,12 @@
 .env
+.env.*
+.git
 storage
 public/build
 public/hot
 node_modules
 core
+# backups and archives can hold secrets or live data; never part of an image build (IR08)
+backup/archives
+**/backups
+**/*.backup-before-*
