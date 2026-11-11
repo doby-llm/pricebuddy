@@ -81,6 +81,33 @@ class TelegramChannelTest extends TestCase
         });
     }
 
+    public function test_send_notification_to_distinct_chat_ids_once_each()
+    {
+        $userWithMultipleChatIds = User::factory()->withNotificationSettings([
+            NotificationMethods::Telegram->value => [
+                'enabled' => true,
+                'chat_id' => "123456, 789012 123456\n, 789012",
+            ],
+        ])->createOne();
+
+        $product = Product::factory()->addUrlsAndPrices()->create([
+            'title' => 'Notif product',
+        ]);
+
+        $notification = new PriceAlertNotification($product->urls()->first());
+        $postUrl = 'api.telegram.org/botbot-token/sendMessage';
+
+        Http::fake([
+            $postUrl => Http::response(['ok' => true]),
+        ]);
+
+        (new TelegramChannel)->send($userWithMultipleChatIds, $notification);
+
+        Http::assertSentCount(2);
+        Http::assertSent(fn (Request $request) => $request['chat_id'] === '123456');
+        Http::assertSent(fn (Request $request) => $request['chat_id'] === '789012');
+    }
+
     public function test_no_request_without_chat_id()
     {
         $userWithoutChatId = User::factory()->withNotificationSettings([

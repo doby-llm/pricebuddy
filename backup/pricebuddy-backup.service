@@ -1,0 +1,15 @@
+[Unit]
+Description=Create and verify PriceBuddy HDD and Google Drive backup
+Documentation=file:/home/mflova/git/pricebuddy/backup/README.md
+Wants=docker.service
+After=docker.service
+ConditionPathIsMountPoint=/mnt/hdd-manu
+ConditionPathExists=/home/mflova/git/pricebuddy/backup/pricebuddy_backup.py
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/mflova/git/pricebuddy
+Environment=PATH=/home/mflova/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=UV_PYTHON_DOWNLOADS=never
+ExecStart=/home/mflova/.local/bin/uv run --offline --python 3.11 --no-project /home/mflova/git/pricebuddy/backup/pricebuddy_backup.py --helper-image alpine/git@sha256:a299a963fbe31628ab481ca42907bcf0691d004f86734c02638abdf513691d42 --timeout 1800 --drive
+TimeoutStartSec=45min

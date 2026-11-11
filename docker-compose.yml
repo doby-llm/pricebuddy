@@ -4,7 +4,9 @@ services:
         build:
             context: .
             dockerfile: docker/php.dockerfile
-        image: jez500/pricebuddy:latest
+        image: local/emsign-20261022/pricebuddy-app-1:fixed
+        pull_policy: never
+        restart: unless-stopped
         ports:
             - 8080:80
         volumes:
@@ -22,11 +24,21 @@ services:
         depends_on:
             database:
                 condition: service_healthy
+            scraper:
+                condition: service_healthy
+        healthcheck:
+            test: [ "CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://127.0.0.1/up\") === false ? 1 : 0);'" ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         networks:
             - default
 
     database:
-        image: mysql:8.2
+        image: local/emsign-20261022/pricebuddy-database-1:fixed
+        pull_policy: never
+        restart: unless-stopped
         environment:
             MYSQL_DATABASE: pricebuddy
             MYSQL_USER: pricebuddy
@@ -37,18 +49,26 @@ services:
         networks:
             - default
         healthcheck:
-            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+            test: [ "CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_PASSWORD}\" mysqladmin ping -h localhost -u\"$${MYSQL_USER}\" --silent" ]
             interval: 10s
             timeout: 5s
             retries: 5
             start_period: 1m
 
     scraper:
-        image: jez500/seleniumbase-scrapper:latest
+        image: local/emsign-20261022/pricebuddy-scraper-1:fixed
+        pull_policy: never
+        restart: unless-stopped
         networks:
             - default
         ports:
             - 3030:3000 # Optional, if you want to access the scrapper api from the host machine
+        healthcheck:
+            test: [ "CMD-SHELL", "python3 -c 'import sys, urllib.request; urllib.request.urlopen(\"http://127.0.0.1:3000/health\", timeout=3).close()'"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
 
 volumes:
     storage:

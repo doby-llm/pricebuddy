@@ -62,3 +62,13 @@ CLAUDE.md
 .ai/mcp
 docs/superpowers
 .superpowers/
+
+# Pi deployment (IR07a)
+.env.*
+!.env.example
+backup/archives/
+backup/archives
+backups/
+*.backup-before-*
+__pycache__/
+backup/fixtures/compose-with-secrets.yml

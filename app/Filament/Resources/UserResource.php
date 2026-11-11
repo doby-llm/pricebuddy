@@ -200,10 +200,10 @@ class UserResource extends Resource
             NotificationMethods::Telegram->value,
             [
                 Forms\Components\TextInput::make('chat_id')
-                    ->label(__('Chat ID'))
+                    ->label(__('Chat ID(s)'))
                     ->required()
                     ->hint(new HtmlString('<a href="https://t.me/userinfobot" target="_blank">Find your chat ID</a>'))
-                    ->hintIcon(Icons::Help->value, __('Your personal Telegram chat ID. Message @userinfobot to find it, and remember to start a chat with the bot first.')),
+                    ->hintIcon(Icons::Help->value, __('One or more Telegram chat IDs, separated by commas or whitespace. Message @userinfobot to find them, and remember to start a chat with the bot first.')),
             ]
         );
     }

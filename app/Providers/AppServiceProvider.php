@@ -16,9 +16,12 @@ use Filament\Facades\Filament;
 use Filament\Navigation\MenuItem;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Console\AboutCommand;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,11 +33,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerApiRateLimiter();
         $this->registerPolicies();
         $this->registerFilamentSettings();
         $this->setConfigFromAppSettings();
         $this->registerAbout();
         $this->authorizePackages();
+    }
+
+    protected function registerApiRateLimiter(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     }
 
     protected function registerPolicies(): void

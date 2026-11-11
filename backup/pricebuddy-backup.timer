@@ -1,0 +1,13 @@
+[Unit]
+Description=Run local-only PriceBuddy backup three times weekly
+Documentation=file:/home/mflova/git/pricebuddy/backup/README.md
+
+[Timer]
+# Calendar cadence is stable across timer/manager restarts; Persistent catches up missed runs.
+OnCalendar=Mon,Wed,Fri *-*-* 00:10:00 Europe/Zurich
+Persistent=true
+AccuracySec=1min
+Unit=pricebuddy-backup.service
+
+[Install]
+WantedBy=timers.target

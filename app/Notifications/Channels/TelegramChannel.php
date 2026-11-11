@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Http;
  * Sends notifications via a Telegram bot.
  *
  * The bot token is configured once at the app level (it is shared by every
- * user), while each user provides their own chat id so messages are routed to
- * their personal Telegram chat. This mirrors the Pushover pattern (global app
- * token + per-user user key).
+ * user provides their own chat id(s) so messages are routed to
+ * their personal Telegram chat(s). This mirrors the Pushover pattern (global
+ * app token + per-user user key).
  *
  * @see https://core.telegram.org/bots/api#sendmessage
  */
@@ -39,21 +39,25 @@ class TelegramChannel
 
         $settings = self::getSettings($notifiable);
 
-        // Without a bot token (app level) and chat id (per user) there is
+        $chatIds = self::parseChatIds($settings['chat_id']);
+
+        // Without a bot token (app level) and chat id(s) (per user) there is
         // nowhere to deliver the message, so skip silently.
-        if (empty($settings['bot_token']) || empty($settings['chat_id'])) {
+        if (empty($settings['bot_token']) || $chatIds === []) {
             return;
         }
 
-        $response = self::sendRequest(
-            self::makeUrl($settings['bot_token']),
-            $settings['chat_id'],
-            $message->title,
-            $message->content,
-            $message->url
-        );
+        foreach ($chatIds as $chatId) {
+            $response = self::sendRequest(
+                self::makeUrl($settings['bot_token']),
+                $chatId,
+                $message->title,
+                $message->content,
+                $message->url
+            );
 
-        $response->throw();
+            $response->throw();
+        }
     }
 
     /**
@@ -70,6 +74,18 @@ class TelegramChannel
     public static function makeUrl(string $botToken): string
     {
         return 'https://api.telegram.org/bot'.$botToken.'/sendMessage';
+    }
+
+    /**
+     * Split comma- or whitespace-separated chat IDs and remove duplicates.
+     *
+     * @return list<string>
+     */
+    private static function parseChatIds(mixed $chatIds): array
+    {
+        $ids = preg_split('/[\s,]+/', trim((string) $chatIds), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_unique($ids));
     }
 
     public static function sendRequest(string $apiUrl, string $chatId, string $title, string $message, string $url = ''): Response

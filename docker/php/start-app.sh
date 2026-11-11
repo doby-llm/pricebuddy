@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# Apache's PID file lives in the container writable layer and can survive a
+# restart even though the old Apache process is gone. Remove that stale file
+# before Supervisor starts Apache, otherwise the web server exits immediately.
+rm -f /run/apache2/apache2.pid /var/run/apache2/apache2.pid
+
 # Setup the environment file if it doesn't exist
 if [ ! -f ".env" ] ||  ! grep -q . ".env" ; then
     cp .env.example .env
     php artisan key:generate --force
 fi
-
-# Debugging
-printenv
 
 # Ensure storage exists
 mkdir -p storage/framework/sessions \
