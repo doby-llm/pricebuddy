@@ -4,7 +4,7 @@ services:
         build:
             context: .
             dockerfile: docker/php.dockerfile
-        image: pi/pricebuddy-app:${PI_TAG}
+        image: pi/pricebuddy-app:${PI_TAG:-209acae0bcd0}
         pull_policy: never
         restart: unless-stopped
         ports:
@@ -39,7 +39,7 @@ services:
         build:
             context: .
             dockerfile: docker/database.dockerfile
-        image: pi/pricebuddy-database:${PI_TAG}
+        image: pi/pricebuddy-database:${PI_TAG:-209acae0bcd0}
         pull_policy: never
         restart: unless-stopped
         environment:
@@ -62,7 +62,7 @@ services:
         build:
             context: .
             dockerfile: docker/scraper.dockerfile
-        image: pi/pricebuddy-scraper:${PI_TAG}
+        image: pi/pricebuddy-scraper:${PI_TAG:-209acae0bcd0}
         pull_policy: never
         restart: unless-stopped
         networks:
