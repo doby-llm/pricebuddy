@@ -5,7 +5,10 @@ FROM mysql@sha256:212fe73edca5df6ff14826d5eb975c914bfb91f82a2e923f9050568f99525d
 # inside emsign-g3.sh regenerates the G3 bundle from /usr/share/pki/ca-trust-source.
 COPY ca/emsign-g3-blacklist.pem /etc/pki/ca-trust/source/blacklist/emsign-g3.pem
 COPY ca/emsign-g3.sh /usr/local/sbin/emsign-g3.sh
+# The OpenSSL bundle (/etc/pki/tls/certs/ca-bundle.trust.crt) keeps blacklisted certificates as
+# explicit reject entries, so it is rebuilt from the trusted anchors only: G3 is then absent from it.
 RUN microdnf install -y ca-certificates openssl \
     && sh /usr/local/sbin/emsign-g3.sh remove \
+    && trust extract --format=openssl-bundle --filter=ca-anchors --overwrite --comment /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt \
     && rm -f /usr/local/sbin/emsign-g3.sh \
     && microdnf clean all
