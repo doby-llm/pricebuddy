@@ -647,5 +647,41 @@ class LocalRetentionTests(unittest.TestCase):
             self.assertFalse((output_dir / f"{backup_ids[1]}.manifest.json").exists())
 
 
+class DumpOnlyArgParseTests(unittest.TestCase):
+    """--dump-only --out PATH is the pibackup pre-hook: it writes the dump and nothing else."""
+
+    def test_dump_only_parses_with_out(self) -> None:
+        args = backup.build_parser().parse_args(["--dump-only", "--out", "db.sql"])
+        self.assertTrue(args.dump_only)
+        self.assertEqual(args.out, pathlib.Path("db.sql"))
+
+    def test_dump_only_is_exclusive_with_drive(self) -> None:
+        with redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+            backup.build_parser().parse_args(["--dump-only", "--out", "db.sql", "--drive"])
+
+    def test_dump_only_requires_out(self) -> None:
+        with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as raised:
+            backup.main(["--dump-only"])
+        self.assertEqual(raised.exception.code, 2)
+
+    def test_out_requires_dump_only(self) -> None:
+        with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as raised:
+            backup.main(["--out", "db.sql"])
+        self.assertEqual(raised.exception.code, 2)
+
+    def test_dump_only_writes_the_dump_and_skips_the_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp) / "db.sql"
+            with (
+                mock.patch.object(backup, "dump_mysql") as dump,
+                mock.patch.object(backup, "create_backup", side_effect=AssertionError("archive built")) as archive,
+                mock.patch.object(backup, "load_drive_transport", side_effect=AssertionError("transport loaded")) as load,
+            ):
+                self.assertEqual(backup.main(["--dump-only", "--out", str(out)]), 0)
+            dump.assert_called_once_with(backup.DEFAULT_DATABASE_CONTAINER, out, 600)
+            archive.assert_not_called()
+            load.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
